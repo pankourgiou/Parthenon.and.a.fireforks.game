@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎆 Parthenon Fireworks</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #c9a84c;
+  --goldlt: #f0d080;
+  --panel-bg: rgba(8,6,18,0.92);
+  --border: rgba(201,168,76,0.35);
+  --text: #e8dcc8;
+  --accent: #7ecfff;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #06040f;
+  font-family: 'EB Garamond', serif;
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+/* ── TITLE ── */
+header {
+  text-align: center;
+  padding: 28px 20px 16px;
+  position: relative;
+  z-index: 10;
+}
+header h1 {
+  font-family: 'Cinzel Decorative', cursive;
+  font-size: clamp(1.4rem, 4vw, 2.6rem);
+  color: var(--goldlt);
+  letter-spacing: 3px;
+  text-shadow: 0 0 30px rgba(240,208,128,0.5);
+}
+header p {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  color: #a09070;
+  margin-top: 4px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ── CANVAS WRAPPER ── */
+.scene-wrap {
+  position: relative;
+  width: min(860px, 96vw);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(201,168,76,0.18), 0 0 120px rgba(0,0,0,0.8);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.scene-wrap img {
+  display: block;
+  width: 100%;
+  pointer-events: none;
+  user-select: none;
+  filter: brightness(1.15) contrast(1.08) saturate(1.1);
+}
+#fwCanvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 70%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+/* ── CONTROL PANEL ── */
+.panel {
+  width: min(860px, 96vw);
+  margin-top: 20px;
+  margin-bottom: 30px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 24px 28px;
+  backdrop-filter: blur(16px);
+}
+.panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px 24px;
+}
+
+.ctrl-group label {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  color: #a09070;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* TYPE BUTTONS */
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.type-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 4px;
+  color: #c8b88a;
+  font-family: 'EB Garamond', serif;
+  font-size: 0.88rem;
+  padding: 7px 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.type-btn:hover { background: rgba(201,168,76,0.12); border-color: var(--gold); }
+.type-btn.active {
+  background: rgba(201,168,76,0.22);
+  border-color: var(--goldlt);
+  color: var(--goldlt);
+  box-shadow: 0 0 10px rgba(201,168,76,0.3);
+}
+
+/* SLIDERS */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.1);
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 6px rgba(201,168,76,0.6);
+  cursor: pointer;
+}
+.range-val {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  color: var(--accent);
+  float: right;
+  margin-top: -18px;
+  pointer-events: none;
+}
+
+/* COLOR PALETTE */
+.palette {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.pal-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+  outline: none;
+}
+.pal-btn:hover { transform: scale(1.2); }
+.pal-btn.active { border-color: white; transform: scale(1.25); box-shadow: 0 0 8px currentColor; }
+
+/* TOGGLE */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.toggle {
+  position: relative;
+  width: 38px; height: 20px;
+  flex-shrink: 0;
+}
+.toggle input { opacity:0; width:0; height:0; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.3s;
+  border: 1px solid var(--border);
+}
+.toggle input:checked + .toggle-track { background: rgba(201,168,76,0.5); }
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.3s;
+}
+.toggle input:checked + .toggle-track::after { transform: translateX(18px); }
+.toggle-label { font-family: 'EB Garamond', serif; font-size: 0.92rem; color: var(--text); }
+
+/* ACTION BUTTONS */
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.btn {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-gold {
+  background: linear-gradient(135deg, rgba(201,168,76,0.25), rgba(240,208,128,0.15));
+  color: var(--goldlt);
+  border-color: var(--gold);
+}
+.btn-gold:hover { background: rgba(201,168,76,0.38); box-shadow: 0 0 16px rgba(201,168,76,0.3); }
+.btn-ghost { background: transparent; color: #888; }
+.btn-ghost:hover { color: var(--text); border-color: #666; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎆 Parthenon Fireworks</h1>
+  <p>Illuminate the sacred sky above Athens</p>
+</header>
+
+<div class="scene-wrap" id="sceneWrap">
+  <img id="parthenonImg" src="data:image/jpeg;base64,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" alt="Parthenon at night">
+  <canvas id="fwCanvas"></canvas>
+</div>
+
+<div class="panel">
+  <div class="panel-title">✦ Fireworks Customisation ✦</div>
+  <div class="controls-grid">
+
+    <!-- TYPE -->
+    <div class="ctrl-group" style="grid-column: span 2;">
+      <label>Firework Type</label>
+      <div class="type-grid">
+        <button class="type-btn active" data-type="classic"  onclick="setType(this)">🎆 Classic</button>
+        <button class="type-btn"        data-type="chrysanthemum" onclick="setType(this)">🌸 Chrysanthemum</button>
+        <button class="type-btn"        data-type="willow"   onclick="setType(this)">🌿 Willow</button>
+        <button class="type-btn"        data-type="ring"     onclick="setType(this)">⭕ Ring</button>
+        <button class="type-btn"        data-type="star"     onclick="setType(this)">⭐ Star Burst</button>
+        <button class="type-btn"        data-type="crossette" onclick="setType(this)">✚ Crossette</button>
+        <button class="type-btn"        data-type="comet"    onclick="setType(this)">☄️ Comet</button>
+        <button class="type-btn"        data-type="peony"    onclick="setType(this)">🌺 Peony</button>
+        <button class="type-btn"        data-type="spiral"   onclick="setType(this)">🌀 Spiral</button>
+      </div>
+    </div>
+
+    <!-- PALETTE -->
+    <div class="ctrl-group">
+      <label>Colour Palette</label>
+      <div class="palette">
+        <button class="pal-btn active" data-pal="gold"    onclick="setPal(this)" style="background:linear-gradient(135deg,#ffd700,#ff8c00)" title="Gold"></button>
+        <button class="pal-btn"        data-pal="greek"   onclick="setPal(this)" style="background:linear-gradient(135deg,#1e90ff,#ffffff)" title="Greek Blue & White"></button>
+        <button class="pal-btn"        data-pal="fire"    onclick="setPal(this)" style="background:linear-gradient(135deg,#ff4500,#ff8c00,#ffd700)" title="Fire"></button>
+        <button class="pal-btn"        data-pal="ice"     onclick="setPal(this)" style="background:linear-gradient(135deg,#00bfff,#e0f7ff)" title="Ice"></button>
+        <button class="pal-btn"        data-pal="rainbow" onclick="setPal(this)" style="background:conic-gradient(red,orange,yellow,green,blue,violet,red)" title="Rainbow"></button>
+        <button class="pal-btn"        data-pal="rose"    onclick="setPal(this)" style="background:linear-gradient(135deg,#ff69b4,#fff0f5)" title="Rose"></button>
+        <button class="pal-btn"        data-pal="emerald" onclick="setPal(this)" style="background:linear-gradient(135deg,#00c853,#b9f6ca)" title="Emerald"></button>
+        <button class="pal-btn"        data-pal="galaxy"  onclick="setPal(this)" style="background:linear-gradient(135deg,#6a0dad,#e040fb,#00bcd4)" title="Galaxy"></button>
+      </div>
+    </div>
+
+    <!-- RATE -->
+    <div class="ctrl-group">
+      <label>Launch Rate</label>
+      <input type="range" id="rateSlider" min="200" max="2000" value="800" step="100"
+             oninput="cfg.rate=+this.value; document.getElementById('rateVal').textContent=rateLabel(+this.value)">
+      <div class="range-val" id="rateVal">Medium</div>
+    </div>
+
+    <!-- SIZE -->
+    <div class="ctrl-group">
+      <label>Burst Size</label>
+      <input type="range" id="sizeSlider" min="40" max="180" value="90" step="10"
+             oninput="cfg.size=+this.value; document.getElementById('sizeVal').textContent=+this.value+'px'">
+      <div class="range-val" id="sizeVal">90px</div>
+    </div>
+
+    <!-- PARTICLES -->
+    <div class="ctrl-group">
+      <label>Particle Count</label>
+      <input type="range" id="ptSlider" min="20" max="200" value="80" step="10"
+             oninput="cfg.particles=+this.value; document.getElementById('ptVal').textContent=+this.value">
+      <div class="range-val" id="ptVal">80</div>
+    </div>
+
+    <!-- GRAVITY -->
+    <div class="ctrl-group">
+      <label>Gravity</label>
+      <input type="range" id="gravSlider" min="0" max="0.5" value="0.12" step="0.01"
+             oninput="cfg.gravity=+this.value; document.getElementById('gravVal').textContent=(+this.value).toFixed(2)">
+      <div class="range-val" id="gravVal">0.12</div>
+    </div>
+
+    <!-- TRAIL -->
+    <div class="ctrl-group">
+      <label>Trail Length</label>
+      <input type="range" id="trailSlider" min="0.05" max="0.4" value="0.13" step="0.01"
+             oninput="cfg.fade=+this.value; document.getElementById('trailVal').textContent=trailLabel(+this.value)">
+      <div class="range-val" id="trailVal">Medium</div>
+    </div>
+
+    <!-- TOGGLES -->
+    <div class="ctrl-group">
+      <label>Effects</label>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+        <div class="toggle-row">
+          <label class="toggle"><input type="checkbox" id="glitterToggle" checked onchange="cfg.glitter=this.checked"><span class="toggle-track"></span></label>
+          <span class="toggle-label">Glitter sparks</span>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle"><input type="checkbox" id="autoToggle" checked onchange="cfg.auto=this.checked"><span class="toggle-track"></span></label>
+          <span class="toggle-label">Auto-launch</span>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle"><input type="checkbox" id="multiToggle" onchange="cfg.multi=this.checked"><span class="toggle-track"></span></label>
+          <span class="toggle-label">Salvo mode (×3)</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <div class="action-row">
+    <button class="btn btn-gold" onclick="manualLaunch()">🎆 Launch Now</button>
+    <button class="btn btn-ghost" onclick="clearAll()">✕ Clear Sky</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════
+const cfg = {
+  type: 'classic',
+  pal: 'gold',
+  rate: 800,
+  size: 90,
+  particles: 80,
+  gravity: 0.12,
+  fade: 0.13,
+  glitter: true,
+  auto: true,
+  multi: false,
+};
+
+// ── PALETTES ──
+const PALETTES = {
+  gold:    ['#FFD700','#FFA500','#FF8C00','#FFEC8B','#FFF8DC','#FF6600'],
+  greek:   ['#1E90FF','#00BFFF','#87CEEB','#FFFFFF','#4169E1','#B0C4DE'],
+  fire:    ['#FF4500','#FF6347','#FF8C00','#FFD700','#FF0000','#FFA07A'],
+  ice:     ['#00BFFF','#E0F7FF','#87CEEB','#B0E0E6','#AFEEEE','#FFFFFF'],
+  rainbow: ['#FF0000','#FF7F00','#FFFF00','#00FF00','#0000FF','#8B00FF','#FF69B4'],
+  rose:    ['#FF69B4','#FFB6C1','#FF1493','#FFC0CB','#DB7093','#FFFFFF'],
+  emerald: ['#00C853','#B9F6CA','#00E676','#69F0AE','#1B5E20','#CCFF90'],
+  galaxy:  ['#6A0DAD','#E040FB','#00BCD4','#FFFFFF','#7C4DFF','#CE93D8'],
+};
+
+function pickColor() {
+  const p = PALETTES[cfg.pal];
+  return p[Math.floor(Math.random()*p.length)];
+}
+
+// ── CANVAS SETUP ──
+const canvas = document.getElementById('fwCanvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  const wrap = document.getElementById('sceneWrap');
+  W = canvas.width  = wrap.offsetWidth;
+  H = canvas.height = Math.round(wrap.offsetHeight * 0.70);
+}
+window.addEventListener('resize', resize);
+window.addEventListener('load', () => { setTimeout(resize, 100); });
+
+// ── PARTICLES ──
+let particles = [];
+let rockets   = [];
+
+// ══════════════════════════════════════════════
+//  ROCKET
+// ══════════════════════════════════════════════
+function launchRocket(targetX, targetY) {
+  const startX = W * (0.15 + Math.random() * 0.7);
+  rockets.push({
+    x: startX, y: H + 10,
+    tx: targetX ?? W * (0.1 + Math.random() * 0.8),
+    ty: targetY ?? H * (0.05 + Math.random() * 0.55),
+    trail: [],
+    color: pickColor(),
+    speed: 8 + Math.random() * 5,
+    done: false,
+  });
+}
+
+function updateRockets() {
+  rockets = rockets.filter(r => {
+    // trail
+    r.trail.push({ x: r.x, y: r.y, a: 1 });
+    if (r.trail.length > 18) r.trail.shift();
+
+    const dx = r.tx - r.x, dy = r.ty - r.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < r.speed + 2) {
+      explode(r.tx, r.ty, r.color);
+      return false;
+    }
+    r.x += (dx/dist) * r.speed;
+    r.y += (dy/dist) * r.speed;
+    return true;
+  });
+}
+
+function drawRockets() {
+  rockets.forEach(r => {
+    r.trail.forEach((t, i) => {
+      const a = (i / r.trail.length) * 0.8;
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.fillStyle = r.color;
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = r.color;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 2.5 - i*0.1, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+//  EXPLOSIONS
+// ══════════════════════════════════════════════
+function explode(x, y, baseColor) {
+  const type = cfg.type;
+  const count = cfg.particles;
+  const size  = cfg.size;
+
+  for (let i = 0; i < count; i++) {
+    const angle  = (i / count) * Math.PI * 2;
+    const speed  = getSpeed(type, i, count, size);
+    const color  = getColor(type, i, count, baseColor);
+    const life   = getLife(type);
+    const extra  = getExtra(type, i, count);
+
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed + (extra.vx||0),
+      vy: Math.sin(angle) * speed + (extra.vy||0),
+      color,
+      alpha: 1,
+      life,
+      decay: 0.012 + Math.random()*0.008,
+      size: 2 + Math.random()*2,
+      gravity: cfg.gravity,
+      type,
+      glitter: cfg.glitter && Math.random() < 0.3,
+      trail: type === 'willow' || type === 'comet',
+      trailPts: [],
+      angle,
+      i, count,
+      wobble: type === 'spiral' ? (Math.random()*0.3) : 0,
+      wobbleDir: Math.random() < 0.5 ? 1 : -1,
+    });
+  }
+
+  // glitter centre flash
+  if (cfg.glitter) {
+    for (let k = 0; k < 12; k++) {
+      const a = Math.random()*Math.PI*2;
+      const s = 1 + Math.random()*2;
+      particles.push({
+        x, y,
+        vx: Math.cos(a)*s, vy: Math.sin(a)*s,
+        color: '#FFFFFF',
+        alpha: 1, life: 0.6,
+        decay: 0.04,
+        size: 1.5,
+        gravity: cfg.gravity * 0.3,
+        glitter: false, trail: false, trailPts: [],
+        wobble: 0,
+      });
+    }
+  }
+}
+
+function getSpeed(type, i, count, size) {
+  const base = size / 18;
+  switch(type) {
+    case 'chrysanthemum': return base * (0.6 + Math.random()*0.8);
+    case 'willow':        return base * (0.3 + Math.random()*0.5);
+    case 'ring':          return base * (0.9 + Math.random()*0.1);
+    case 'star':          return (i % 5 === 0) ? base * 1.4 : base * 0.4;
+    case 'crossette':     return base * (0.7 + Math.random()*0.4);
+    case 'comet':         return base * (0.5 + Math.random()*1.2);
+    case 'peony':         return base * (0.5 + Math.random()*0.7);
+    case 'spiral':        return base * (0.4 + (i/count)*0.8);
+    default:              return base * (0.5 + Math.random()*1);
+  }
+}
+
+function getColor(type, i, count, base) {
+  if (type === 'star' && i % 5 === 0) return '#FFFFFF';
+  if (type === 'ring')  return base;
+  if (type === 'crossette' && i % 4 === 0) return '#FFFFFF';
+  const p = PALETTES[cfg.pal];
+  return p[Math.floor(i / count * p.length)] || base;
+}
+
+function getLife(type) {
+  switch(type) {
+    case 'willow':   return 1.4 + Math.random()*0.4;
+    case 'comet':    return 1.2 + Math.random()*0.5;
+    case 'peony':    return 1.1 + Math.random()*0.3;
+    default:         return 0.9 + Math.random()*0.3;
+  }
+}
+
+function getExtra(type, i, count) {
+  if (type === 'crossette' && i % 4 === 0) {
+    const jitter = (Math.random()-0.5)*1.5;
+    return { vx: jitter, vy: jitter };
+  }
+  return {};
+}
+
+// ── UPDATE & DRAW PARTICLES ──
+function updateParticles() {
+  particles = particles.filter(p => p.alpha > 0.01 && p.life > 0);
+  particles.forEach(p => {
+    if (p.trail) {
+      p.trailPts.push({ x: p.x, y: p.y, a: p.alpha });
+      if (p.trailPts.length > 10) p.trailPts.shift();
+    }
+    if (p.wobble) {
+      p.vx += Math.sin(p.life * 20) * p.wobble * p.wobbleDir * 0.05;
+    }
+    p.x   += p.vx;
+    p.y   += p.vy;
+    p.vy  += p.gravity;
+    p.vx  *= 0.98;
+    p.vy  *= 0.98;
+    p.life  -= p.decay;
+    p.alpha  = Math.max(0, p.life);
+    // Crossette secondary burst
+    if (p.type === 'crossette' && p.life < 0.5 && !p._burst && Math.random()<0.02) {
+      p._burst = true;
+      for (let k=0;k<6;k++) {
+        const a2=Math.random()*Math.PI*2;
+        particles.push({
+          x:p.x,y:p.y,
+          vx:Math.cos(a2)*1.5,vy:Math.sin(a2)*1.5,
+          color:'#FFFFFF',alpha:0.9,life:0.5,decay:0.04,
+          size:1.5,gravity:cfg.gravity,glitter:false,trail:false,trailPts:[],wobble:0
+        });
+      }
+    }
+  });
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    // trail lines for willow / comet
+    if (p.trail && p.trailPts.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = p.size * 0.6;
+      ctx.lineCap = 'round';
+      for (let j=1;j<p.trailPts.length;j++) {
+        const t0=p.trailPts[j-1], t1=p.trailPts[j];
+        ctx.globalAlpha = t1.a * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(t0.x,t0.y);
+        ctx.lineTo(t1.x,t1.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle   = p.color;
+    ctx.shadowBlur  = p.glitter ? 10 : 5;
+    ctx.shadowColor = p.color;
+
+    if (p.glitter && Math.random()<0.5) {
+      // star shape
+      ctx.beginPath();
+      for (let pt=0;pt<5;pt++) {
+        const a=pt*Math.PI*2/5 - Math.PI/2;
+        const r=p.size*1.5, ri=r*0.4;
+        if(pt===0) ctx.moveTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r);
+        else       ctx.lineTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r);
+        const ai=a+Math.PI/5;
+        ctx.lineTo(p.x+Math.cos(ai)*ri,p.y+Math.sin(ai)*ri);
+      }
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+}
+
+// ══════════════════════════════════════════════
+//  MAIN LOOP
+// ══════════════════════════════════════════════
+let lastLaunch = 0;
+function loop(ts) {
+  // Fade trail
+  ctx.fillStyle = `rgba(0,0,0,${cfg.fade})`;
+  ctx.fillRect(0, 0, W, H);
+
+  updateRockets();
+  drawRockets();
+  updateParticles();
+  drawParticles();
+
+  if (cfg.auto && ts - lastLaunch > cfg.rate) {
+    lastLaunch = ts;
+    launchRocket();
+    if (cfg.multi) { launchRocket(); launchRocket(); }
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ══════════════════════════════════════════════
+//  CONTROLS
+// ══════════════════════════════════════════════
+function setType(btn) {
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfg.type = btn.dataset.type;
+}
+
+function setPal(btn) {
+  document.querySelectorAll('.pal-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cfg.pal = btn.dataset.pal;
+}
+
+function manualLaunch() {
+  launchRocket();
+  if (cfg.multi) { launchRocket(); launchRocket(); }
+}
+
+function clearAll() {
+  particles = [];
+  rockets   = [];
+  ctx.clearRect(0,0,W,H);
+}
+
+function rateLabel(v) {
+  if (v <= 400) return 'Rapid';
+  if (v <= 800) return 'Medium';
+  if (v <= 1400) return 'Slow';
+  return 'Very Slow';
+}
+function trailLabel(v) {
+  if (v <= 0.1)  return 'Long';
+  if (v <= 0.2)  return 'Medium';
+  if (v <= 0.3)  return 'Short';
+  return 'Instant';
+}
+
+// Click on scene to launch there
+document.getElementById('sceneWrap').addEventListener('click', function(e) {
+  const r = this.getBoundingClientRect();
+  const sx = (e.clientX - r.left) / r.width  * W;
+  const sy = (e.clientY - r.top)  / r.height * H;
+  const targetY = Math.min(sy, H * 0.6);
+  launchRocket(sx, targetY);
+  if (cfg.multi) { launchRocket(sx-30, targetY-10); launchRocket(sx+30, targetY-10); }
+});
+</script>
+</body>
+</html>
